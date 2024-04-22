@@ -3,7 +3,7 @@ namespace DeathRoll.Bahamood.TextureHandler;
 public static class TextureManager
 {
     // XIV Textures
-    public static readonly Texture GarleanFlag = Texture.GetTexSpecial(XivPaths.GarleanFlag, Vector2.Zero, new Vector2(0.72f, 1.0f));
+    public static readonly Texture GarleanFlag;
     public static readonly Texture LimsaRock1 = Texture.GetTex(XivPaths.LimsaRock1);
     public static readonly Texture LimsaStuc1 = Texture.GetTex(XivPaths.LimsaStuc1);
     public static readonly Texture LimsaStpv1 = Texture.GetTex(XivPaths.LimsaStpv1);
@@ -23,6 +23,19 @@ public static class TextureManager
     public static readonly Texture Vines2 = Texture.GetFile(@"Resources\Textures\v2.png");
     public static readonly Texture VinesLeft = Texture.GetFile(@"Resources\Textures\v3L.png");
     public static readonly Texture VinesRight = Texture.GetFile(@"Resources\Textures\v3R.png");
+
+    static TextureManager()
+    {
+        // GarleanFlag is EW exclusive, just load some random texture if it fails
+        try
+        {
+            GarleanFlag = Texture.GetTexSpecial(XivPaths.GarleanFlag, Vector2.Zero, new Vector2(0.72f, 1.0f));
+        }
+        catch
+        {
+            GarleanFlag = Texture.GetTex(XivPaths.LimsaRock1);
+        }
+    }
 
     public static void Dispose()
     {
