@@ -1,5 +1,5 @@
 using Dalamud.Interface.Components;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using DeathRoll.Data;
 
@@ -393,7 +393,7 @@ public partial class MainWindow
         {
             var result = BlackjackTargetRegistration();
             if (result != string.Empty)
-                Plugin.PluginInterface.UiBuilder.AddNotification(result, "DeathRoll Helper", NotificationType.Error);
+                Plugin.Notification.AddNotification(new Notification {Content = result, Type = NotificationType.Error});
         }
         ImGuiHelpers.ScaledDummy(10.0f);
     }

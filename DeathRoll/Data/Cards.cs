@@ -2,7 +2,7 @@ namespace DeathRoll.Data;
 
 public static class Cards
 {
-    private const string BaseCard = @"
+    public const string BaseCard = @"
 ┌─────────┐
 │{0}{1}       │
 │         │
@@ -12,9 +12,9 @@ public static class Cards
 │         │
 │       {1}{0}│
 └─────────┘";
-    private const string SuitCard = @"{0}";
+    public const string SuitCard = @"{0}";
 
-    private const string BlankCard = @"
+    public const string BlankCard = @"
 ┌─────────┐
 │         │
 │         │
@@ -60,7 +60,7 @@ public static class Cards
                 1 => "♥",
                 2 => "♦",
                 3 => "♣",
-                _ => "♠",
+                _ => " ",
             }
         );
     }
@@ -73,6 +73,11 @@ public static class Cards
         public readonly bool IsAce;
 
         public bool IsHidden;
+
+        public Card(int value)
+        {
+
+        }
 
         public Card (int rank, int suit, bool isHidden = false)
         {

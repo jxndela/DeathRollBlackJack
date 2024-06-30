@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Dalamud;
+using Dalamud.Game;
 
 namespace DeathRoll.Logic;
 

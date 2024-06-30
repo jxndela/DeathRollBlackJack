@@ -1,5 +1,6 @@
 using System.IO;
-using Dalamud.Interface.Internal;
+using Dalamud.Interface.Textures;
+using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Utility;
 using Lumina.Data.Files;
 using SixLabors.ImageSharp;
@@ -48,29 +49,29 @@ public class Texture
 
     public static Texture FromFile(string file)
     {
-        return new Texture(Plugin.PluginInterface.UiBuilder.LoadImage(file));
+        return new Texture(Plugin.TextureProvider.GetFromFile(file).RentAsync().Result);
     }
 
     public static Texture GetFile(string path)
     {
-        return new Texture(Plugin.PluginInterface.UiBuilder.LoadImage(Path.Combine(Plugin.PluginDir, path)));
+        return new Texture(Plugin.TextureProvider.GetFromFile(Path.Combine(Plugin.PluginDir, path)).RentAsync().Result);
     }
 
     public static Texture GetTex(string path)
     {
         var tex = Plugin.Data.GetFile<TexFile>(path)!;
-        return new Texture(Plugin.TextureProvider.GetTexture(tex));
+        return new Texture(Plugin.TextureProvider.CreateFromTexFile(tex));
     }
 
     public static Texture GetTexSpecial(string path, Vector2 uvMin, Vector2 uvMax)
     {
         var tex = Plugin.Data.GetFile<TexFile>(path)!;
-        return new Texture(Plugin.TextureProvider.GetTexture(tex), uvMin, uvMax);
+        return new Texture(Plugin.TextureProvider.CreateFromTexFile(tex), uvMin, uvMax);
     }
 
-    public static Texture FromRaw(byte[] data, int width, int height, int channels)
+    public static Texture FromRaw(byte[] data, int width, int height)
     {
-        return new Texture(Plugin.PluginInterface.UiBuilder.LoadImageRaw(data, width, height, channels));
+        return new Texture(Plugin.TextureProvider.CreateFromRaw(RawImageSpecification.Rgba32(width, height), data));
     }
 
     private static Texture GetUldPart(string path, string tex, int index)
@@ -199,9 +200,9 @@ public class DoorTexture
 
         return new DoorTexture
         {
-            Full = Texture.FromRaw(fullTexture.ImageToRaw(), 512, 512, 4),
-            Left = Texture.FromRaw(leftTexture.ImageToRaw(), 512, 512, 4),
-            Right = Texture.FromRaw(rightTexture.ImageToRaw(), 512, 512, 4),
+            Full = Texture.FromRaw(fullTexture.ImageToRaw(), 512, 512),
+            Left = Texture.FromRaw(leftTexture.ImageToRaw(), 512, 512),
+            Right = Texture.FromRaw(rightTexture.ImageToRaw(), 512, 512),
         };
     }
 

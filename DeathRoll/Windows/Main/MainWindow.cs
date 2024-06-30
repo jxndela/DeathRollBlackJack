@@ -1,4 +1,4 @@
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using DeathRoll.Data;
@@ -64,6 +64,9 @@ public partial class MainWindow : Window, IDisposable
             case GameModes.Minesweeper:
                 MinesweeperMode();
                 break;
+            case GameModes.Uno:
+                UnoMode();
+                break;
             default:
                 ImGui.Text("Not Implemented!");
                 break;
@@ -77,7 +80,7 @@ public partial class MainWindow : Window, IDisposable
         {
             var result = TargetRegistration();
             if (result != string.Empty)
-                Plugin.PluginInterface.UiBuilder.AddNotification(result, "DeathRoll Helper", NotificationType.Error);
+                Plugin.Notification.AddNotification(new Notification {Content = result, Type = NotificationType.Error});
         }
         ImGuiHelpers.ScaledDummy(10.0f);
     }

@@ -8,6 +8,7 @@ public enum GameModes
     Blackjack = 3,
     TripleT = 4,
     Minesweeper = 5,
+    Uno = 6,
 }
 
 public enum Difficulty : byte
@@ -31,6 +32,7 @@ public static class GameModeUtils
             GameModes.Blackjack => "Blackjack",
             GameModes.TripleT => "Tic-Tac-Toe",
             GameModes.Minesweeper => "Minesweeper",
+            GameModes.Uno => "Uno (Soon or so)",
             _ => "Unknown"
         };
     }
@@ -64,9 +66,9 @@ public static class DifficultyExtensions
     {
         return difficulty switch
         {
-            Difficulty.Easy => new [] { (8, 8, 10), (9, 9, 10) },
-            Difficulty.Medium => new [] { (16, 16, 40) },
-            Difficulty.Hard => new [] { (16, 30, 99) },
+            Difficulty.Easy => [(8, 8, 10), (9, 9, 10)],
+            Difficulty.Medium => [(16, 16, 40)],
+            Difficulty.Hard => [(16, 30, 99)],
             _ => new [] { (8, 8, 10) },
         };
     }

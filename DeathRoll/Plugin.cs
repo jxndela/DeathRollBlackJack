@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Reflection;
+﻿using System.Reflection;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text;
@@ -24,13 +23,14 @@ public sealed class Plugin : IDalamudPlugin
 {
     [PluginService] public static IFramework Framework { get; private set; } = null!;
     [PluginService] public static ICommandManager Commands { get; private set; } = null!;
-    [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    [PluginService] public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
     [PluginService] public static IChatGui Chat { get; private set; } = null!;
     [PluginService] public static ITargetManager TargetManager { get; private set; } = null!;
     [PluginService] public static IPluginLog Log { get; private set; } = null!;
     [PluginService] public static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] public static IDataManager Data { get; private set; } = null!;
+    [PluginService] public static INotificationManager Notification { get; private set; } = null!;
 
     public const string Authors = "Infi";
     public static readonly string Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
@@ -51,6 +51,7 @@ public sealed class Plugin : IDalamudPlugin
     public readonly Participants Participants;
     public GameState State = GameState.NotRunning;
 
+    public readonly Uno Uno;
     public readonly Blackjack Blackjack;
     public readonly RoundInfo TripleT;
     public Minesweeper Minesweeper;
@@ -61,10 +62,10 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        Configuration.Initialize(PluginInterface);
 
         Participants = new Participants(Configuration);
         RollManager = new RollManager(this);
+        Uno = new Uno(this);
         Blackjack = new Blackjack(this);
         TripleT = new RoundInfo(Configuration);
         Minesweeper = new Minesweeper(Configuration.MinesweeperDif.GridSizes()[0]);
@@ -161,13 +162,13 @@ public sealed class Plugin : IDalamudPlugin
     public static string GetTargetName()
     {
         var target = TargetManager.SoftTarget ?? TargetManager.Target;
-        if (target is not PlayerCharacter pc || pc.HomeWorld.GameData == null)
+        if (target is not IPlayerCharacter pc || pc.HomeWorld.GameData == null)
             return string.Empty;
 
         return $"{pc.Name}\uE05D{pc.HomeWorld.GameData.Name}";
     }
 
-    private void OnChatMessage(XivChatType type, uint id, ref SeString sender, ref SeString message, ref bool handled)
+    private void OnChatMessage(XivChatType type, int _, ref SeString sender, ref SeString message, ref bool handled)
     {
         if (!Configuration.On || State is GameState.NotRunning or GameState.Done or GameState.Crash)
             return;

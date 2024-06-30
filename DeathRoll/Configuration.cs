@@ -60,16 +60,10 @@ public class Configuration : IPluginConfiguration
     // Minesweeper
     public Difficulty MinesweeperDif = Difficulty.Easy;
 
-    [NonSerialized] private DalamudPluginInterface? PluginInterface;
     [NonSerialized] public bool AcceptNewPlayers = false;
-
-    public void Initialize(DalamudPluginInterface pluginInterface)
-    {
-        PluginInterface = pluginInterface;
-    }
 
     public void Save()
     {
-        PluginInterface!.SavePluginConfig(this);
+        Plugin.PluginInterface.SavePluginConfig(this);
     }
 }
