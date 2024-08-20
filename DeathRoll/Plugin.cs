@@ -1,9 +1,6 @@
 ﻿using System.Reflection;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -31,6 +28,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] public static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] public static IDataManager Data { get; private set; } = null!;
     [PluginService] public static INotificationManager Notification { get; private set; } = null!;
+    [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
 
     public const string Authors = "Infi";
     public static readonly string Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
@@ -46,6 +44,7 @@ public sealed class Plugin : IDalamudPlugin
     public readonly Configuration Configuration;
     public readonly RollManager RollManager;
     public readonly FontManager FontManager;
+    public readonly HookManager HookManager;
 
     public string LocalPlayer = string.Empty;
     public readonly Participants Participants;
@@ -56,6 +55,7 @@ public sealed class Plugin : IDalamudPlugin
     public readonly RoundInfo TripleT;
     public Minesweeper Minesweeper;
     public readonly Bahamood.Bahamood Bahamood;
+    public readonly Peggle.Peggle Peggle;
 
     private readonly PluginCommandManager<Plugin> CommandManager;
 
@@ -64,12 +64,14 @@ public sealed class Plugin : IDalamudPlugin
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         Participants = new Participants(Configuration);
+        HookManager = new HookManager(this);
         RollManager = new RollManager(this);
         Uno = new Uno(this);
         Blackjack = new Blackjack(this);
         TripleT = new RoundInfo(Configuration);
         Minesweeper = new Minesweeper(Configuration.MinesweeperDif.GridSizes()[0]);
         Bahamood = new Bahamood.Bahamood(this);
+        Peggle = new Peggle.Peggle(this);
 
         FontManager = new FontManager();
 
@@ -90,9 +92,11 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(Bahamood.DebugWindow);
         #endif
 
+        WindowSystem.AddWindow(Peggle.Window);
+        WindowSystem.AddWindow(Peggle.EditorWindow);
+
         CommandManager = new PluginCommandManager<Plugin>(this, Commands);
 
-        Chat.ChatMessage += OnChatMessage;
         PluginInterface.UiBuilder.Draw += DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi += OpenConfig;
 
@@ -102,11 +106,14 @@ public sealed class Plugin : IDalamudPlugin
     private void GameUpdate(IFramework framework)
     {
         Bahamood.Run();
+        Peggle.Run();
     }
 
     public void Dispose()
     {
         Bahamood.Dispose();
+        Peggle.Dispose();
+
         Framework.Update -= GameUpdate;
 
         WindowSystem.RemoveAllWindows();
@@ -116,10 +123,10 @@ public sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw -= DrawUI;
         PluginInterface.UiBuilder.OpenConfigUi -= OpenConfig;
-        Chat.ChatMessage -= OnChatMessage;
 
         FontManager.Dispose();
         CommandManager.Dispose();
+        HookManager.Dispose();
 
         TripleT.Dispose();
     }
@@ -168,109 +175,22 @@ public sealed class Plugin : IDalamudPlugin
         return $"{pc.Name}\uE05D{pc.HomeWorld.GameData.Name}";
     }
 
-    private void OnChatMessage(XivChatType type, int _, ref SeString sender, ref SeString message, ref bool handled)
+    public void ProcessIncomingMessage(string fullName, int roll, int outOf)
     {
         if (!Configuration.On || State is GameState.NotRunning or GameState.Done or GameState.Crash)
             return;
 
-        var xivChatType = (ushort) type;
-        var channel = xivChatType & 0x7F;
-
-        if (DebugConfig.Debug)
-        {
-            Log.Information("Chat Event fired.");
-            Log.Information($"Sender: {sender}.");
-            Log.Information($"Content: {message}.");
-            Log.Information($"ChatType: {type} Unmasked Channel: {channel}.");
-            Log.Information($"Language: {ClientState.ClientLanguage}.");
-        }
-
-        // 2122 = Random Roll 8266 = different Player Random roll?
-        // Dice Roll: FC, LS, CWLS, Party, Alliance
-        if (!Enum.IsDefined(typeof(DeathRollChatTypes), xivChatType) && channel != 74)
-            return;
-
-        var dice = channel != 74;
-        switch (dice)
-        {
-            case true when Configuration.OnlyRandom: // only /random is accepted
-            case false when Configuration.OnlyDice: // only /dice is accepted
-                return;
-        }
-        var m = Reg.Match(message.ToString(), ClientState.ClientLanguage, dice);
-        if (!m.Success)
-            return;
-
         var local = ClientState.LocalPlayer;
-        if (local == null || local.HomeWorld.GameData?.Name == null)
+        if (local?.HomeWorld.GameData?.Name != null)
+            LocalPlayer = $"{local.Name}\uE05D{local.HomeWorld.GameData.Name}";
+
+        if (Configuration.ActiveBlocklist && Configuration.SavedBlocklist.Contains(fullName.Replace("\uE05D", "@")))
         {
-            Log.Error("Unable to fetch character name.");
+            Log.Information("Blocked player tried to roll.");
             return;
         }
 
-        var diceCommand = 0;
-        var playerName = $"{local.Name}\uE05D{local.HomeWorld.GameData.Name}";
-        LocalPlayer = playerName;
-        var isLocalPlayer = sender.ToString() == local.Name.ToString();
-        if (!isLocalPlayer || dice)
-        {
-            var found = isLocalPlayer;
-            foreach (var payload in message.Payloads) // try to get name and check for dice cheating
-            {
-                if (DebugConfig.Debug)
-                    Log.Information($"message: {payload}");
-
-                switch (payload)
-                {
-                    case PlayerPayload playerPayload:
-                        playerName = $"{playerPayload.PlayerName}\uE05D{playerPayload.World.Name}";
-                        found = true;
-                        break;
-                    case IconPayload iconPayload:
-                        switch (iconPayload.Icon)
-                        {
-                            case BitmapFontIcon.Dice:
-                            case BitmapFontIcon.AutoTranslateBegin:
-                            case BitmapFontIcon.AutoTranslateEnd:
-                                diceCommand += 1;
-                                break;
-                        }
-
-                        break;
-                }
-            }
-
-            if (!found) // get playerName from payload
-                foreach (var payload in sender.Payloads)
-                {
-                    if (DebugConfig.Debug)
-                        Log.Information($"Sender: {payload}");
-
-                    playerName = payload switch
-                    {
-                        PlayerPayload playerPayload => $"{playerPayload.PlayerName}\uE05D{playerPayload.World.Name}",
-                        _ => playerName
-                    };
-                }
-        }
-
-        if (Configuration.ActiveBlocklist && Configuration.SavedBlocklist.Contains(playerName))
-        {
-            if (DebugConfig.Debug)
-                Log.Information("Blocked player tried to roll.");
-            return;
-        }
-
-
-        // dice always needs the autoTranslate payload
-        // if not has a player just written the exact string
-        if (dice && !DebugConfig.AllowDiceCheat && diceCommand != 3)
-        {
-            Chat.Print($"{playerName} tried to cheat~");
-            return;
-        }
-
-        RollManager.ParseRoll(new Roll(m, playerName));
+        RollManager.ParseRoll(new Roll(fullName, roll, outOf));
     }
 
     public void SwitchState(GameState newState)

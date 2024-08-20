@@ -28,6 +28,21 @@ public partial class ConfigWindow
                 Plugin.Bahamood.DebugWindow.IsOpen ^= true;
             }
 
+            ImGui.SameLine();
+
+            if (ImGui.Button("Start Peggle"))
+            {
+                Plugin.Peggle.Running ^= true;
+                Plugin.Peggle.Window.IsOpen ^= true;
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button("Show Editor"))
+            {
+                Plugin.Peggle.EditorWindow.IsOpen ^= true;
+            }
+
             ImGuiHelpers.ScaledDummy(5.0f);
             ImGui.TextColored(ImGuiColors.DalamudViolet, "Game Mode:");
             ImGuiComponents.HelpMarker("Venue: Useful for games like Truth&Dare" +

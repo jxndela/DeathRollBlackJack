@@ -17,12 +17,6 @@ public class RollManager
 
     public void ParseRoll(Roll roll)
     {
-        if (DebugConfig.Debug)
-        {
-            Plugin.Log.Information($"Extracted Player Name: {roll.PlayerName}.");
-            Plugin.Log.Information($"Regex: Roll {roll.Result} OutOf {roll.OutOf}");
-        }
-
         try
         {
             switch (Plugin.Configuration.GameMode)
@@ -57,8 +51,7 @@ public class RollManager
         {
             case false when exists:
             {
-                if (DebugConfig.Debug)
-                    Plugin.Log.Information("Player already rolled, no reroll allowed.");
+                Plugin.Log.Information("Player already rolled, no reroll allowed.");
                 return;
             }
             case true when exists:
@@ -116,11 +109,11 @@ public class Roll
         PlayerName = name;
     }
 
-    public Roll(Match m, string playerName)
+    public Roll(string fullName, int roll, int outOf)
     {
-        Result = int.Parse(m.Groups["roll"].Value);
-        OutOf = m.Groups["out"].Success ? int.Parse(m.Groups["out"].Value) : -1;
-        PlayerName = playerName;
+        Result = roll;
+        OutOf = outOf != 0 ? outOf : -1;
+        PlayerName = fullName;
     }
 
     public static Roll Dummy(string name = "Unknown") => new(name);

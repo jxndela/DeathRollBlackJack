@@ -30,6 +30,12 @@ public static class Helper
     public static readonly uint NumberRed = Vec4ToUintColor(Red);
     public static readonly uint Background = Vec4ToUintColor(Black);
 
+    // Peggle
+    public static readonly uint PegBlue = Vec4ToUintColor(new Vector4(0.059f, 0.055f, 0.859f, 1));
+    public static readonly uint PegOrange = Vec4ToUintColor(new Vector4(1.0f, 0.616f, 0.102f, 1));
+    public static readonly uint PegGreen = Vec4ToUintColor(new Vector4(0.075f, 0.788f, 0.063f, 1));
+    public static readonly uint PegPurple = Vec4ToUintColor(new Vector4(0.753f, 0.063f, 0.788f, 1));
+
     public static bool SelectableDelete(Participant participant, Participants participants, int idx = 0, Vector4 color = new())
     {
         var deletion = "";

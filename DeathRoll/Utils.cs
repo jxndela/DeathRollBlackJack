@@ -18,6 +18,13 @@ public static class Utils
 
     public static float Mod(float k, int n) { return (k %= n) < 0 ? k + n : k;  }
     public static double Mod(double k, double n) { return (k %= n) < 0 ? k + n : k;  }
+
+    public static Vector2 RndVec2()
+    {
+        var x = Random.Shared.NextSingle() * 2.0f - 1.0f;
+        var y = Random.Shared.NextSingle() * 2.0f - 1.0f;
+        return new Vector2(x, y);
+    }
 }
 
 static class ListExtension

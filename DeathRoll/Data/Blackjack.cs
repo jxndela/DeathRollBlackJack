@@ -209,7 +209,10 @@ public class Blackjack
         }
 
         CurrentPlayer.Cards.Add(new Card(roll.Result, DrawCard().Suit));
-        if (!Plugin.Configuration.StartingDraw || CurrentPlayer.Cards.Count >= 2)
+        if (Plugin.Configuration.StartingDraw && CurrentPlayer.Cards.Count < 2)
+            return;
+
+        if (CurrentPlayer.Cards.Count >= 2)
             CurrentPlayerIndex++;
     }
 
@@ -392,14 +395,14 @@ public class Blackjack
 
     public void DealerRound()
     {
-        switch (Dealer.CalculateCardValues())
+        var value = Dealer.CalculateCardValues();
+        switch (value)
         {
+            case 21:
+                DealerBlackjack();
+                break;
             case > 21:
                 DealerBust();
-                break;
-            case 21:
-                if (!Plugin.Configuration.StartingBlackjack || Dealer.Cards.Count == 2)
-                    DealerBlackjack();
                 break;
         }
     }
@@ -440,18 +443,14 @@ public class Blackjack
                 CurrentPlayer.IsAlive = false;
                 CurrentPlayer.LastAction = BlackjackActions.Bust;
                 return true;
-            case 21:
+            case 21 when !Plugin.Configuration.StartingBlackjack:
+            case 21 when Plugin.Configuration.StartingBlackjack && CurrentPlayer.Cards.Count == 2:
                 CurrentPlayer.IsAlive = false;
-                if (!Plugin.Configuration.StartingBlackjack || CurrentPlayer.Cards.Count == 2)
-                {
-                    CurrentPlayer.Bet += (int)(CurrentPlayer.Bet * ((float)3 / 2));
-                    CurrentPlayer.LastAction = BlackjackActions.Blackjack;
-                }
-                else
-                {
-                    CurrentPlayer.LastAction = BlackjackActions.FullHand;
-                }
-
+                CurrentPlayer.Bet += (int)(CurrentPlayer.Bet * ((float)3 / 2));
+                CurrentPlayer.LastAction = BlackjackActions.Blackjack;
+                return true;
+            case 21 when Plugin.Configuration.StartingBlackjack && CurrentPlayer.Cards.Count > 2:
+                CurrentPlayer.LastAction = BlackjackActions.FullHand;
                 return true;
         }
 
@@ -497,11 +496,8 @@ public class Blackjack
     public void EndMatch()
     {
         var dealerCards = Dealer.CalculateCardValues();
-        foreach (var player in Players)
+        foreach (var player in Players.Where(p => p.IsAlive))
         {
-            if (!player.IsAlive)
-                continue;
-
             var cards = player.CalculateCardValues();
             if (cards != dealerCards)
                 player.Bet *= cards > dealerCards ? 2 : -1;
