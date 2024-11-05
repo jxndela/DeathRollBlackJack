@@ -121,7 +121,7 @@ public partial class MainWindow
         // Copy out all winnings to a single string to show all players the final standings (and leave a record if a player wants to play their push/winnings into the next round)
         if (ImGui.Button("Copy Payout"))
         {
-            var finalPayout = "Payouts: | ";
+            var finalPayout = "Payouts for the peasants who won: | ";
             foreach (var player in Plugin.Blackjack.Players)
                 finalPayout += $"{player.Name.Split()[0]} -> {(player.Bet < 1 ? "Lost!" : $"{player.Bet:N0}")} | ";
             ImGui.SetClipboardText(finalPayout);
